@@ -6,7 +6,7 @@ async function main() {
 
     const privateKey: string = "privateKey";
     const rpcUrl: string = "rpc-url";
-    const walletAddress: string = "0x6FA95dE8d1307025e3984df404A3058527eaDc06";
+    const walletAddress: string = "wallet address";
 
 
     const provider = new ethers.JsonRpcProvider(rpcUrl);
