@@ -1,22 +1,25 @@
 ```
-paulelisha@Macbook-M3-Pro dgswap-multicall % npx jest
-  console.log
-    Transaction sent. Hash: 0xMockedTxHash
-
-      at MulticallSwap.<anonymous> (src/multicallSwap.ts:58:21)
-
-  console.log
-    Transaction confirmed. Receipt: { status: 1, transactionHash: '0xMockedTxHash' }
-
-      at MulticallSwap.<anonymous> (src/multicallSwap.ts:61:21)
-
- PASS  __test__/multicallSwap.test.ts
-  MulticallSwap
-    ✓ should encode swap transactions and send multicall transaction (9 ms)
-    ✓ should handle errors during swap execution (1 ms)
-
-Test Suites: 1 passed, 1 total
-Tests:       2 passed, 2 total
-Snapshots:   0 total
-Time:        0.515 s, estimated 1 s
+paulelisha@Macbook-M3-Pro dgswap-multicall % paulelisha@Macbook-M3-Pro src % node runSwap.js
+Initializing swap...
+Transaction sent. Hash: 0x10f0a8e1d704076d2ba7e0307e4dd5e6dbc4f85355de1f9aaf92da43a380b743
+Transaction confirmed. Receipt: TransactionReceipt {
+  provider: JsonRpcProvider {},
+  to: '0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428',
+  from: '0x6FA95dE8d1307025e3984df404A3058527eaDc06',
+  contractAddress: null,
+  hash: '0x10f0a8e1d704076d2ba7e0307e4dd5e6dbc4f85355de1f9aaf92da43a380b743',
+  index: 3,
+  blockHash: '0x9ebc80a56ab93161cdf8e69f034dde4a0416a813847c1fff480f12b013aa06bc',
+  blockNumber: 175336446,
+  logsBloom: '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+  gasUsed: 63000n,
+  blobGasUsed: null,
+  cumulativeGasUsed: 839107n,
+  gasPrice: 25000000000n,
+  blobGasPrice: null,
+  type: 2,
+  status: 1,
+  root: undefined
+}
+Swap process completed.
 ```

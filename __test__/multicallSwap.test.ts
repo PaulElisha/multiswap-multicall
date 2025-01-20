@@ -45,9 +45,9 @@ describe("MulticallSwap", () => {
                 fee: 3000,
                 recipient: "0xRecipientAddress",
                 deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-                amountIn: 1000000,
-                amountOutMinimum: 900000,
-                sqrtPriceLimitX96: 0,
+                amountIn: BigInt(1000000),
+                amountOutMinimum: BigInt(900000),
+                sqrtPriceLimitX96: BigInt(0),
             },
             {
                 tokenIn: "0xTokenInAddress2",
@@ -55,9 +55,9 @@ describe("MulticallSwap", () => {
                 fee: 3000,
                 recipient: "0xRecipientAddress",
                 deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-                amountIn: 2000000,
-                amountOutMinimum: 1800000,
-                sqrtPriceLimitX96: 0,
+                amountIn: BigInt(2000000),
+                amountOutMinimum: BigInt(1800000),
+                sqrtPriceLimitX96: BigInt(0),
             }
         ];
 
@@ -88,9 +88,9 @@ describe("MulticallSwap", () => {
                 fee: 3000,
                 recipient: "0xRecipientAddress",
                 deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-                amountIn: 1000000,
-                amountOutMinimum: 900000,
-                sqrtPriceLimitX96: 0,
+                amountIn: BigInt(1000000),
+                amountOutMinimum: BigInt(900000),
+                sqrtPriceLimitX96: BigInt(0),
             }
         ];
 
