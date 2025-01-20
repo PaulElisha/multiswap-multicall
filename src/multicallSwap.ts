@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { abi as ISwapRouter } from "v2-sdk/sdks/v2-sdk/abi/ISwapRouter.json";
+import { abi as ISwapRouter } from "../src/abi/ISwapRouter.json";
 
 interface SwapParam {
     tokenIn: string;
@@ -7,16 +7,16 @@ interface SwapParam {
     fee: number;
     recipient: string;
     deadline: number;
-    amountIn: number;
-    amountOutMinimum: number;
-    sqrtPriceLimitX96: number;
+    amountIn: bigint;
+    amountOutMinimum: bigint;
+    sqrtPriceLimitX96: bigint;
 }
+
 
 export class MulticallSwap {
     private signer: ethers.Signer;
     private swapRouterContract: ethers.Contract;
     private readonly DRAGONSWAP_ROUTER_ADDRESS: string = "0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428";
-
 
     constructor(signer: ethers.Signer) {
         this.signer = signer;
