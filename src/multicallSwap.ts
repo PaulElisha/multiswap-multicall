@@ -1,9 +1,6 @@
 import { ethers } from "ethers";
 import { abi as ISwapRouter } from "v2-sdk/sdks/v2-sdk/abi/ISwapRouter.json";
-// import { abi as IMulticall } from "v2-sdk/sdks/v2-sdk/abi/IMulticall.json";
-// import { abi as IPeripheryPayments } from "./abi/IPeripheryPayments.json";
 
-// Define an interface for swap parameters
 interface SwapParam {
     tokenIn: string;
     tokenOut: string;
