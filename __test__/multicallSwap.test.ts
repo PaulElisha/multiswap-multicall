@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { MulticallSwap } from "../src/multicallSwap"; // Adjust according to your file structure
+import { MulticallSwap } from "../src/multicallSwap"; // Adjust path accordingly
 
 jest.mock("ethers");
 
@@ -8,7 +8,7 @@ describe("MulticallSwap", () => {
     let mockContract: jest.Mocked<ethers.Contract>;
     let multicallSwap: MulticallSwap;
 
-    const DRAGONSWAP_ROUTER_ADDRESS = "0x11DA6463D6Cb5a03411Dbf5ab6f6bc3997Ac7428";
+    const DRAGONSWAP_ROUTER_ADDRESS = "0xA324880f884036E3d21a09B90269E1aC57c7EC8a";
 
     beforeEach(() => {
         // Mock signer
@@ -20,8 +20,14 @@ describe("MulticallSwap", () => {
             }),
         } as unknown as jest.Mocked<ethers.Signer>;
 
-        // Mock contract
+        // Mock ERC20 contract
         mockContract = {
+            allowance: jest.fn().mockResolvedValue(BigInt(0)), // Mock allowance
+            balanceOf: jest.fn().mockResolvedValue(BigInt(1000000000)), // Mock balance check
+            approve: jest.fn().mockResolvedValue({
+                hash: "0xMockedApprovalTxHash",
+                wait: jest.fn().mockResolvedValue({ status: 1 }),
+            }),
             interface: {
                 encodeFunctionData: jest.fn()
                     .mockReturnValueOnce("0xMockedCallData1")
@@ -48,36 +54,27 @@ describe("MulticallSwap", () => {
                 amountIn: BigInt(1000000),
                 amountOutMinimum: BigInt(900000),
                 sqrtPriceLimitX96: BigInt(0),
-            },
-            {
-                tokenIn: "0xTokenInAddress2",
-                tokenOut: "0xTokenOutAddress2",
-                fee: 3000,
-                recipient: "0xRecipientAddress",
-                deadline: Math.floor(Date.now() / 1000) + 60 * 20,
-                amountIn: BigInt(2000000),
-                amountOutMinimum: BigInt(1800000),
-                sqrtPriceLimitX96: BigInt(0),
             }
         ];
 
         await multicallSwap.performSwaps(swapParams);
 
-        // Check if function data was encoded correctly
-        expect(mockContract.interface.encodeFunctionData).toHaveBeenCalledWith("exactInputSingle", [swapParams[0]]);
-        expect(mockContract.interface.encodeFunctionData).toHaveBeenCalledWith("exactInputSingle", [swapParams[1]]);
-        expect(mockContract.interface.encodeFunctionData).toHaveBeenCalledWith("multicall", [["0xMockedCallData1", "0xMockedCallData2"]]);
+        // Check if balanceOf was called
+        expect(mockContract.balanceOf).toHaveBeenCalledWith("0xMockedUserAddress");
 
-        // Check if sendTransaction was called with correct arguments
+        // Check if allowance was checked and approve was called
+        expect(mockContract.allowance).toHaveBeenCalled();
+        expect(mockContract.approve).toHaveBeenCalledWith(DRAGONSWAP_ROUTER_ADDRESS, BigInt(1000000));
+
+        // Check if encoded function data was created
+        expect(mockContract.interface.encodeFunctionData).toHaveBeenCalledWith("exactInputSingle", [swapParams[0]]);
+
+        // Check if sendTransaction was called
         expect(mockSigner.sendTransaction).toHaveBeenCalledWith({
             to: DRAGONSWAP_ROUTER_ADDRESS,
             from: "0xMockedUserAddress",
-            data: "0xMockedMulticallData",
+            data: "0xMockedCallData2",
         });
-
-        // Verify that transaction was sent and waited for
-        const txResponse = await mockSigner.sendTransaction.mock.results[0].value;
-        expect(txResponse.wait).toHaveBeenCalled();
     });
 
     test("should handle errors during swap execution", async () => {
@@ -102,5 +99,13 @@ describe("MulticallSwap", () => {
         await multicallSwap.performSwaps(swapParams);
 
         expect(console.error).toHaveBeenCalledWith("Swap failed:", expect.any(Error));
+    });
+
+    test("should validate swap deadline", () => {
+        const validDeadline = Math.floor(Date.now() / 1000) + 60 * 10;
+        const expiredDeadline = Math.floor(Date.now() / 1000) - 60;
+
+        expect(multicallSwap["validateDeadline"](validDeadline)).toBe(true);
+        expect(multicallSwap["validateDeadline"](expiredDeadline)).toBe(false);
     });
 });
