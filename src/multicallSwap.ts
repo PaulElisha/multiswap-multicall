@@ -2,24 +2,15 @@ import { ethers } from "ethers";
 import { abi as ISwapRouter } from "../src/abi/ISwapRouter.json";
 import { abi as IERC20 } from '../src/abi/IERC20.json';
 import { abi as IDragonswapV2Factory } from '../src/abi/IDragonswapV2Factory.json';
+import { SwapParam } from "./interfaces/SwapParam";
 
-interface SwapParam {
-    tokenIn: string;
-    tokenOut: string;
-    fee: number;
-    recipient: string;
-    deadline: number;
-    amountIn: bigint;
-    amountOutMinimum: bigint;
-    sqrtPriceLimitX96: bigint;
-}
 
 export class MulticallSwap {
     private signer: ethers.Signer;
     private swapRouterContract: ethers.Contract;
     private factoryContract: ethers.Contract;
     private readonly DRAGONSWAP_ROUTER_ADDRESS: string = "0xA324880f884036E3d21a09B90269E1aC57c7EC8a";
-    private readonly UNISWAP_FACTORY_ADDRESS: string = "0x7431A23897ecA6913D5c81666345D39F27d946A4"; // Update to DragonSwap factory address if different
+    private readonly DRAGONSWAP_FACTORY_ADDRESS: string = "0x7431A23897ecA6913D5c81666345D39F27d946A4"; // Update to DragonSwap factory address if different
 
     constructor(signer: ethers.Signer) {
         this.signer = signer;
@@ -29,7 +20,7 @@ export class MulticallSwap {
             this.signer
         );
         this.factoryContract = new ethers.Contract(
-            this.UNISWAP_FACTORY_ADDRESS,
+            this.DRAGONSWAP_FACTORY_ADDRESS,
             IDragonswapV2Factory,
             this.signer
         );
@@ -66,6 +57,34 @@ export class MulticallSwap {
     }
 
     /**
+ * Calculate slippage-adjusted amountOutMinimum
+ * @param estimatedAmountOut - Expected amount out from the swap
+ * @param slippageTolerance - User-defined slippage tolerance (e.g., 1% = 0.01)
+ * @returns Amount out minimum after applying slippage tolerance
+ */
+    private calculateSlippage(estimatedAmountOut: number, slippageTolerance: number): bigint {
+        const slippageAmount = (BigInt(estimatedAmountOut) * BigInt(Math.floor(slippageTolerance * 100))) / BigInt(10000);
+        return BigInt(estimatedAmountOut) - slippageAmount; // Reduce by slippage tolerance
+    }
+
+
+    private async getPoolFee(tokenIn: string, tokenOut: string): Promise<number> {
+        const feeTiers: number[] = [500, 2000, 10000];
+
+        for (const fee of feeTiers) {
+            const poolAddress = await this.factoryContract.getPool(tokenIn, tokenOut, fee);
+
+            if (poolAddress !== ethers.ZeroAddress) {
+                console.log(`Valid pool found for ${tokenIn}-${tokenOut} with fee: ${fee}`);
+                return fee;
+            }
+
+        }
+
+        throw new Error(`No valid pool found for tokens ${tokenIn} and ${tokenOut}`);
+    }
+
+    /**
      * Check if a liquidity pool exists and has liquidity
      * @param tokenIn - Input token address
      * @param tokenOut - Output token address
@@ -74,11 +93,6 @@ export class MulticallSwap {
      */
     private async poolExistsWithLiquidity(tokenIn: string, tokenOut: string, fee: number): Promise<boolean> {
         const poolAddress = await this.factoryContract.getPool(tokenIn, tokenOut, fee);
-
-        if (!poolAddress || poolAddress === ethers.ZeroAddress) {
-            console.log(`Pool does not exist for ${tokenIn} and ${tokenOut} with fee ${fee}`);
-            return false;
-        }
 
         console.log(`Pool found at address: ${poolAddress}`);
 
@@ -112,9 +126,15 @@ export class MulticallSwap {
                 await this.approveToken(param.amountIn, param.tokenIn);
             }
 
+            const poolFee = await this.getPoolFee(param.tokenIn, param.tokenOut);
+            param.fee = poolFee;
+
             if (!(await this.poolExistsWithLiquidity(param.tokenIn, param.tokenOut, param.fee))) {
                 throw new Error(`No liquidity available in the pool for tokens ${param.tokenIn} and ${param.tokenOut}`);
             }
+
+            const slippageAdjustedAmountOutMin = this.calculateSlippage(param.amountOutMinimum, param.slippageTolerance);
+            param.amountOutMinimum = Number(slippageAdjustedAmountOutMin);
 
             const encData = this.swapRouterContract.interface.encodeFunctionData("exactInputSingle", [param]);
             console.log("Encoded Data is --", encData);

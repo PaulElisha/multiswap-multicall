@@ -12,18 +12,18 @@ async function main() {
     const signer = wallet.connect(provider);
 
     const params = [];
-
+    // 
     const param = {
-        tokenIn: "0x02cbe46fb8a1f579254a9b485788f2d86cad51aa",
-        tokenOut: "0x19aac5f612f524b754ca7e7c41cbfa2e981a4432",
-        fee: 2000,
+        tokenIn: "0x02cbe46fb8a1f579254a9b485788f2d86cad51aa",  // BORA
+        tokenOut: "0x19aac5f612f524b754ca7e7c41cbfa2e981a4432", // WKAIA
         recipient: walletAddress,
+        fee: 0,
         deadline: Math.floor(Date.now() / 1000) + (60 * 10),
-        amountIn: BigInt(ethers.parseEther("5")),  // Corrected value
-        amountOutMinimum: BigInt(0),
+        amountIn: BigInt(ethers.parseEther("0.0001")),  // Corrected value
+        amountOutMinimum: 0,
+        slippageTolerance: 0.005,
         sqrtPriceLimitX96: BigInt(0),
     };
-
 
     params.push(param);
 
