@@ -33,8 +33,9 @@ export class MulticallSwap {
 
         if (allowance >= amountIn) {
             await this.approveToken(BigInt(0), tokenIn);
-            throw new Error(`Removed Approval for token: ${tokenIn}.`);
+            console.log(`Removed Approval for token: ${tokenIn}.`);
         }
+
         return allowance < amountIn;
     }
 
@@ -49,7 +50,7 @@ export class MulticallSwap {
     private async hasSufficientBalance(tokenIn: string, amountIn: bigint): Promise<boolean> {
         const tokenContract = new ethers.Contract(tokenIn, IERC20, this.signer);
         const balance = await tokenContract.balanceOf(await this.signer.getAddress());
-        return balance > amountIn;
+        return balance >= amountIn;
     }
 
     private validateDeadline(deadline: number): boolean {
@@ -75,7 +76,7 @@ export class MulticallSwap {
             const poolAddress = await this.factoryContract.getPool(tokenIn, tokenOut, fee);
 
             if (poolAddress !== ethers.ZeroAddress) {
-                console.log(`Valid pool found for ${tokenIn}-${tokenOut} with fee: ${fee}`);
+                console.log(`Valid pool found for ${tokenIn} -- ${tokenOut} with fee: ${fee}`);
                 return fee;
             }
 
@@ -116,10 +117,12 @@ export class MulticallSwap {
         for (const param of params) {
             if (!this.validateDeadline(param.deadline)) {
                 throw new Error("Deadline has expired");
+                continue;
             }
 
             if (!(await this.hasSufficientBalance(param.tokenIn, param.amountIn))) {
                 throw new Error(`Insufficient balance for token: ${param.tokenIn}`);
+                continue;
             }
 
             if (await this.needsApproval(param.amountIn, param.tokenIn)) {
@@ -131,6 +134,7 @@ export class MulticallSwap {
 
             if (!(await this.poolExistsWithLiquidity(param.tokenIn, param.tokenOut, param.fee))) {
                 throw new Error(`No liquidity available in the pool for tokens ${param.tokenIn} and ${param.tokenOut}`);
+                continue;
             }
 
             const slippageAdjustedAmountOutMin = this.calculateSlippage(param.amountOutMinimum, param.slippageTolerance);
@@ -140,6 +144,12 @@ export class MulticallSwap {
             console.log("Encoded Data is --", encData);
 
             callData.push(encData);
+
+        }
+
+        if (callData.length === 0) {
+            console.error("No valid swaps to execute.");
+            return;
         }
 
         const swapCalldata = this.swapRouterContract.interface.encodeFunctionData("multicall", [callData]);
@@ -149,7 +159,7 @@ export class MulticallSwap {
             to: this.DRAGONSWAP_ROUTER_ADDRESS,
             from: await this.signer.getAddress(),
             data: swapCalldata,
-            gasLimit: ethers.parseUnits("500000", "wei"),
+            gasLimit: ethers.parseUnits("70000", "wei"),
         };
 
         try {
